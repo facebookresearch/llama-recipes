@@ -1,0 +1,131 @@
+name: PyTest tests.
+run-name: ${{ github.actor }} Triggered Action.
+on:
+  pull_request:
+    branches:    
+      - 'main'
+    paths:
+      - '*.py'
+
+  workflow_dispatch: # Only triggering workflow manually.
+    inputs:
+      aws_ec2_type:
+        description: 'EC2 Instance Type to run tests on.'
+        required: true
+        default: "t2.large"
+      aws_ec2_ami:
+        description: 'AMI Image (use default if unsure)'
+        required: true 
+        default: "ami-0a2a52c3564b58a29" # Standard Ubuntu 22.04 LTS with installed Python3.10 and Docker configured. Storage is increased to 50GB.
+        
+env:
+  AWS_REGION : "us-west-2"
+  AWS_ACCOUNT: "320567679581"
+  AWS_SUBNET_ID: "subnet-052cc9eed3a81fe9f" 
+  AWS_EC2_TYPE: "t2.large"
+  AWS_EC2_AMI: "ami-0a2a52c3564b58a29" # ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20230516
+  AWS_SG_ID: "sg-0059cfc5ecfb75bf0"
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+  checks: write
+  pull-requests: write
+
+jobs:
+  start-self-hosted-ec2-runner:
+    name: Start self-hosted EC2 runner
+    runs-on: ubuntu-latest
+    outputs:
+        label: ${{ steps.start-ec2-runner.outputs.label }}
+        ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
+    steps:
+    # If workflow is triggered manually via workflow_dispatch event then both AWS_EC2_TYPE and AWS_EC2_AMI
+    # env variables need to be overwritten with input values.
+      - name: "DEBUG: Overriding AWS_EC2_TYPE and AWS_EC2_AMI env variables with 'workflow_dispatch' inputs"
+        if: ${{ github.event.inputs.aws_ec2_type != '' }}
+        run: |
+          echo "AWS_EC2_TYPE=${{ inputs.aws_ec2_type }}" >> $GITHUB_ENV
+          echo "AWS_EC2_AMI=${{ inputs.aws_ec2_ami }}" >> $GITHUB_ENV
+
+      - name: "DEBUG: AWS_EC2_TYPE and AWS_EC2_AMI env variables values"
+        run: |
+          echo ${{ env.AWS_EC2_TYPE }}
+          echo ${{ env.AWS_EC2_AMI }}
+
+      - name: Configure AWS credentials
+        id: configure_aws_security_credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT }}:role/GitHub_SelfHostedRunner
+          role-session-name: GitHubOIDCSession
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Start EC2 runner
+        id: start-ec2-runner
+        uses: machulav/ec2-github-runner@v2
+        with:
+          mode: start
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }} # added to repo secrets.
+          ec2-image-id: ${{ env.AWS_EC2_AMI }}
+          ec2-instance-type: ${{ env.AWS_EC2_TYPE }}
+          subnet-id: ${{ env.AWS_SUBNET_ID }}
+          security-group-id: ${{ env.AWS_SG_ID }}
+          # GitHub_EC2AccessToAWSServicesRole is associated with Instance Profile is assumed by newly configured EC2 instance(s) 
+          # to perform permitted Actions on AWS resources.
+          iam-role-name: GitHub_EC2AccessToAWSServicesInstanceProfile
+          aws-resource-tags: >
+            [
+              {"Key": "Name", "Value": "ec2-github-runner"},
+              {"Key": "GitHubRepository", "Value": "${{ github.repository }}"}
+            ]
+
+  run_workload_on_the_runner:
+    name: Execute the job on the runner
+    needs: start-self-hosted-ec2-runner                              # required to start the main job when the runner is ready
+    runs-on: ${{ needs.start-self-hosted-ec2-runner.outputs.label }} # run the job on the newly created runner
+    steps:
+
+      - name: "Checkout 'llama-recipes' repository"
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch_name }}
+
+      - name: "Installing dependencies from requirementst.txt file."
+        run: |
+          pip install -U pip setuptools
+          pip install -r requirements.txt
+          pip install --extra-index-url https://download.pytorch.org/whl/test/cu118 -e '.[tests,auditnlg,vllm]' 
+
+      - name: "Running llama-recipes pytest tests on Self Hosted EC2 Runner"
+        run: |
+          echo "Running llama-recipes pytest tests on Self Hosted ${{ env.AWS_EC2_TYPE }} EC2 Runner"
+          cd $GITHUB_WORKSPACE && python3 -m pytest --junitxml="$GITHUB_WORKSPACE/result.xml"
+
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "**/*.xml"
+        if: always()
+
+  stop-runner:
+    name: Stop self-hosted EC2 runner
+    needs:
+      - start-self-hosted-ec2-runner # required to get output from the start-runner job
+      - run_workload_on_the_runner   # required to wait when the main job is done
+    runs-on: ubuntu-latest
+    if: ${{ always() }} # required to stop the runner even if the error happened in the previous jobs
+    steps:
+       - name: Configure AWS credentials
+         id: configure_aws_security_credentials
+         uses: aws-actions/configure-aws-credentials@v2
+         with:
+           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT }}:role/GitHub_SelfHostedRunner
+           aws-region: ${{ env.AWS_REGION }}
+       - name: Stop EC2 runner
+         uses: machulav/ec2-github-runner@v2
+         with:
+           mode: stop
+           github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+           label: ${{ needs.start-self-hosted-ec2-runner.outputs.label }}
+           ec2-instance-id: ${{ needs.start-self-hosted-ec2-runner.outputs.ec2-instance-id }}
