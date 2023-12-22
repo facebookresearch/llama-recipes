@@ -1178,6 +1178,9 @@ gradio
 pdf
 quantized
 streamlit
+HSDP
+ShardingStrategy
+hsdp
 prem
 Prem
 OpenAI
