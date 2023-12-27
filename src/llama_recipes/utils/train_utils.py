@@ -31,7 +31,7 @@ def set_tokenizer_params(tokenizer: LlamaTokenizer):
 def byte2mb(x):
     return int(x / 2**20)
 
-def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_scheduler, gradient_accumulation_steps, train_config, fsdp_config=None, local_rank=None, rank=None):
+def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_scheduler, gradient_accumulation_steps, train_config, fsdp_config=None, local_rank=None, rank=None, wandb_run=None):
     """
     Trains the model on the given dataloader
 
@@ -110,6 +110,14 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
                         optimizer.zero_grad()
                         pbar.update(1)
 
+                if wandb_run: 
+                    if not train_config.enable_fsdp or rank==0:
+                        wandb_run.log({
+                            'train/epoch': epoch + 1,
+                            'train/step': epoch * len(train_dataloader) + step,
+                            'train/loss': loss.detach().float(),
+                        })
+
                 pbar.set_description(f"Training Epoch: {epoch+1}/{train_config.num_epochs}, step {step}/{len(train_dataloader)} completed (loss: {loss.detach().float()})")
             pbar.close()
 
@@ -144,7 +152,7 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
         lr_scheduler.step()
 
         if train_config.run_validation:
-            eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, local_rank, tokenizer)
+            eval_ppl, eval_epoch_loss = evaluation(model, train_config, eval_dataloader, local_rank, tokenizer, wandb_run)
             checkpoint_start_time = time.perf_counter()
             if train_config.save_model and eval_epoch_loss < best_val_loss:
                 if train_config.enable_fsdp:
@@ -224,7 +232,7 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
 
     return results
 
-def evaluation(model,train_config, eval_dataloader, local_rank, tokenizer):
+def evaluation(model,train_config, eval_dataloader, local_rank, tokenizer, wandb_run):
     """
     Evaluates the model on the given dataloader
 
@@ -276,6 +284,12 @@ def evaluation(model,train_config, eval_dataloader, local_rank, tokenizer):
             print(f" {eval_ppl=} {eval_epoch_loss=}")
     else:
         print(f" {eval_ppl=} {eval_epoch_loss=}")
+
+    if wandb_run: 
+        wandb_run.log({
+                        'eval/perplexity': eval_ppl,
+                        'eval/loss': eval_epoch_loss,
+                    }, commit=False)
 
     return eval_ppl, eval_epoch_loss
 
