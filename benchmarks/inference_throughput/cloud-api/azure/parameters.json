@@ -1,0 +1,12 @@
+{
+    "MAX_NEW_TOKEN" : 256,
+    "CONCURRENT_LEVELS" : [1, 2, 4, 8, 16, 32, 64],
+    "THRESHOLD_TPS" : 7,
+    "TOKENIZER_PATH" : "../../tokenizer",
+    "RANDOM_PROMPT_LENGTH" : 1000,
+    "TEMPERATURE" : 0.6,
+    "TOP_P" : 0.9,
+    "MODEL_ENDPOINTS" : "https://your-endpoint.inference.ai.azure.com/v1/completions",
+    "API_KEY" : "your-auth-key",
+    "SYS_PROMPT" : "You are a helpful assistant."
+}

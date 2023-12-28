@@ -1,0 +1,5 @@
+transformers
+requests
+azure-core
+azure-ai-contentsafety
+torch
