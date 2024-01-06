@@ -28,7 +28,7 @@ examples/samsum_prompt.txt
 ```
 
 **Note**
-Currently pad token by default in [HuggingFace Tokenizer is `None`](https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/tokenization_llama.py#L110). We add the padding token as a special token to the tokenizer, which in this case requires to resize the token_embeddings as shown below:
+Currently pad token by default in [Hugging Face Tokenizer is `None`](https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/tokenization_llama.py#L110). We add the padding token as a special token to the tokenizer, which in this case requires to resize the token_embeddings as shown below:
 
 ```python
 tokenizer.add_special_tokens(
@@ -94,7 +94,7 @@ Edit [inference.py](../examples/llama_guard/inference.py) to add test prompts fo
 
 ## Flash Attention and Xformer Memory Efficient Kernels
 
-Setting `use_fast_kernels` will enable using of Flash Attention or Xformer memory-efficient kernels based on the hardware being used. This would speed up inference when used for batched inputs. This has been enabled in `optimum` library from HuggingFace as a one-liner API, please read more [here](https://pytorch.org/blog/out-of-the-box-acceleration/).
+Setting `use_fast_kernels` will enable using of Flash Attention or Xformer memory-efficient kernels based on the hardware being used. This would speed up inference when used for batched inputs. This has been enabled in `optimum` library from Hugging Face as a one-liner API, please read more [here](https://pytorch.org/blog/out-of-the-box-acceleration/).
 
 ```bash
 python examples/chat_completion/chat_completion.py --model_name "PATH/TO/MODEL/7B/" --prompt_file examples/chat_completion/chats.json  --quantization --use_auditnlg --use_fast_kernels
@@ -105,7 +105,7 @@ python examples/inference.py --model_name <training_config.output_dir> --peft_mo
 
 ## Loading back FSDP checkpoints
 
-In case you have fine-tuned your model with pure FSDP and saved the checkpoints with "SHARDED_STATE_DICT" as shown [here](../src/llama_recipes/configs/fsdp.py), you can use this converter script to convert the FSDP Sharded checkpoints into HuggingFace checkpoints. This enables you to use the inference script normally as mentioned above.
+In case you have fine-tuned your model with pure FSDP and saved the checkpoints with "SHARDED_STATE_DICT" as shown [here](../src/llama_recipes/configs/fsdp.py), you can use this converter script to convert the FSDP Sharded checkpoints into Hugging Face checkpoints. This enables you to use the inference script normally as mentioned above.
 **To convert the checkpoint use the following command**:
 
 This is helpful if you have fine-tuned you model using FSDP only as follows:
@@ -113,7 +113,7 @@ This is helpful if you have fine-tuned you model using FSDP only as follows:
 ```bash
 torchrun --nnodes 1 --nproc_per_node 8  examples/finetuning.py --enable_fsdp --model_name /patht_of_model_folder/7B --dist_checkpoint_root_folder model_checkpoints --dist_checkpoint_folder fine-tuned --pure_bf16
 ```
-Then convert your FSDP checkpoint to HuggingFace checkpoints using:
+Then convert your FSDP checkpoint to Hugging Face checkpoints using:
 ```bash
  python -m llama_recipes.inference.checkpoint_converter_fsdp_hf --fsdp_checkpoint_path  PATH/to/FSDP/Checkpoints --consolidated_model_path PATH/to/save/checkpoints --HF_model_path_or_name PATH/or/HF/model_name
 
