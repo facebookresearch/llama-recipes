@@ -6,9 +6,13 @@ import fire
 import torch
 from vllm import LLM
 from vllm import LLM, SamplingParams
+from accelerate.utils import is_xpu_available
 
+if is_xpu_available():
+    torch.xpu.manual_seed(42)
+else:
+    torch.cuda.manual_seed(42)
 
-torch.cuda.manual_seed(42)
 torch.manual_seed(42)
 
 def load_model(model_name, tp_size=1):

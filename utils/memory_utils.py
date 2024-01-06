@@ -1,10 +1,12 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 # This software may be used and distributed according to the terms of the Llama 2 Community License Agreement.
-
 import gc
-import psutil
+import os
+import sys
 import threading
 
+import numpy as np
+import psutil
 import torch
 from accelerate.utils import is_xpu_available
 
