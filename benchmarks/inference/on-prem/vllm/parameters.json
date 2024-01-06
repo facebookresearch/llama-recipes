@@ -1,0 +1,15 @@
+{
+    "MAX_NEW_TOKENS" : 256,
+    "CONCURRENT_LEVELS" : [1, 2, 4, 8, 16, 32, 64, 128, 256],
+    "MODEL_PATH" : "meta-llama/Llama-2-7b-chat-hf",
+    "MODEL_HEADERS" : {"Content-Type": "application/json"},
+    "SAFE_CHECK" : true,
+    "THRESHOLD_TPS" : 7,
+    "TOKENIZER_PATH" : "../../tokenizer",
+    "RANDOM_PROMPT_LENGTH" : 1000,
+    "TEMPERATURE" : 0.6,
+    "TOP_P" : 0.9,
+    "MODEL_ENDPOINTS" : [
+        "http://localhost:8000/v1/chat/completions"
+    ]
+}
