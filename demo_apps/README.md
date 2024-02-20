@@ -69,6 +69,29 @@ This tutorial shows how to use Llama 2 with [vLLM](https://github.com/vllm-proje
 
 \* To run a quantized Llama2 model on iOS and Android, you can use  the open source [MLC LLM](https://github.com/mlc-ai/mlc-llm) or [llama.cpp](https://github.com/ggerganov/llama.cpp). You can even make a Linux OS that boots to Llama2 ([repo](https://github.com/trholding/llama2.c)).
 
+## [Running LLama2 on EC2](llama2_ec2.py)
+This demo app runs `Llama-2-13b-chat-hf` from Hugging Face on an `A10G:1` on AWS EC2. It uses [Runhouse](https://github.com/run-house/runhouse) and [SkyPilot](https://github.com/skypilot-org/skypilot?tab=readme-ov-file) to provision a GPU, sync your code to it, install dependencies, and set up the function on a server that can be called remotely.
+
+After following the setup instructions above, make sure your necessary credentials are setup: 
+
+- Your Huggingface token (`export HF_TOKEN=...`)
+- Your AWS credentials (`~/.aws/credentials`)
+
+Then, run:
+```
+pip install "runhouse[sky]" transformers torch
+sky check
+```
+Make sure `sky check` says AWS is enabled. Then:
+
+```
+git clone https://github.com/facebookresearch/llama-recipes
+cd llama-recipes/demo-apps
+python llama2_ec2.py
+```
+
+This will have some more initial up time to set up the EC2 instance, but if you run the same code again it'll reuse the existing cluster. The instance is managed via SkyPilot; you can run `sky down rh-a10x` to bring down the EC2 instance.
+
 ## [VideoSummary](VideoSummary.ipynb): Ask Llama2 to Summarize a YouTube Video
 This demo app uses Llama2 to return a text summary of a YouTube video. It shows how to retrieve the caption of a YouTube video and how to ask Llama to summarize the content in four different ways, from the simplest naive way that works for short text to more advanced methods of using LangChain's map_reduce and refine to overcome the 4096 limit of Llama's max input token size.
 
