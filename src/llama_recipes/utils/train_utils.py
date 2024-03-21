@@ -69,7 +69,7 @@ def train(model, train_dataloader,eval_dataloader, tokenizer, optimizer, lr_sche
     val_loss =[]
 
     if train_config.save_metrics:
-        metrics_filename = f"{train_config.output_dir}/metrics_data_{local_rank}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json"
+        metrics_filename = f"{train_config.output_dir}/metrics_data_{local_rank or '0'}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.json"
         train_step_perplexity = []
         train_step_loss = []
         val_step_loss = []
@@ -491,5 +491,9 @@ def save_to_json(output_filename, train_step_loss, train_epoch_loss, train_step_
         "val_step_perplexity": val_step_ppl,
         "val_epoch_perplexity": val_epoch_ppl
     }
+    dir_path = os.path.dirname(output_filename)
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
+
     with open(output_filename, "w") as f:
         json.dump(metrics_data, f)
