@@ -6,10 +6,16 @@ In the case of a parameter efficient method like lora the base model has to be g
 Additionally, a prompt for the model in the form of a text file has to be provided. The prompt file can either be piped through standard input or given as --prompt_file parameter.
 
 **Content Safety**
-The inference script also supports safety checks for both user prompt and model outputs. In particular, we use two packages, [AuditNLG](https://github.com/salesforce/AuditNLG/tree/main) and [Azure content safety](https://pypi.org/project/azure-ai-contentsafety/1.0.0b1/).
+The inference script also supports safety checks for both user prompt and model outputs. In particular, we use [AuditNLG](https://github.com/salesforce/AuditNLG/tree/main) and [Azure content safety](https://pypi.org/project/azure-ai-contentsafety/1.0.0b1/). Additionally, we offer Llama Guard with the default categories as an optional content safety checker as well.
 
 **Note**
 If using Azure content Safety, please make sure to get the endpoint and API key as described [here](https://pypi.org/project/azure-ai-contentsafety/1.0.0b1/) and add them as  the following environment variables,`CONTENT_SAFETY_ENDPOINT` and `CONTENT_SAFETY_KEY`.
+
+**Note on Llama Guard**
+Use this command for testing with a quantized Llama model, modifying the values accordingly:
+
+`python inference.py --model_name <path_to_regular_llama_model> --prompt_file <path_to_prompt_file> --quantization --enable_llamaguard_content_safety`
+
 
 Examples:
 

@@ -15,3 +15,5 @@ scipy
 optimum
 matplotlib
 gradio
+jupyter
+jupytext
