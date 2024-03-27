@@ -28,25 +28,26 @@ def main(
     HF_model_path_or_name="" # Path/ name of the HF model that include config.json and tokenizer_config.json (e.g. meta-llama/Llama-2-7b-chat-hf)
     ):
     
-    try:
-        file_name = 'train_params.yaml'
-        # Combine the directory and file name to create the full path
-        train_params_path = os.path.join(fsdp_checkpoint_path, file_name)
-        # Open the file
-        with open(train_params_path, 'r') as file:
-            # Load the YAML data
-            data = yaml.safe_load(file)
-
-            # Access the 'model_name' field
-            HF_model_path_or_name = data.get('model_name')
-
+    if not HF_model_path_or_name:
+        try:
+            file_name = 'train_params.yaml'
+            # Combine the directory and file name to create the full path
+            train_params_path = os.path.join(fsdp_checkpoint_path, file_name)
+            # Open the file
+            with open(train_params_path, 'r') as file:
+                # Load the YAML data
+                data = yaml.safe_load(file)
+    
+                # Access the 'model_name' field
+                HF_model_path_or_name = data.get('model_name')
+    
+                print(f"Model name: {HF_model_path_or_name}")
+        except FileNotFoundError:
+            print(f"The file {train_params_path} does not exist.")
+            HF_model_path_or_name = input("Please enter the model name: ")
             print(f"Model name: {HF_model_path_or_name}")
-    except FileNotFoundError:
-        print(f"The file {train_params_path} does not exist.")
-        HF_model_path_or_name = input("Please enter the model name: ")
-        print(f"Model name: {HF_model_path_or_name}")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+        except Exception as e:
+            print(f"An error occurred: {e}")
         
         
     #load the HF model definition from config
